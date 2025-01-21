@@ -5,10 +5,12 @@ object frmMain: TfrmMain
   ClientHeight = 480
   ClientWidth = 920
   Fill.Kind = Solid
+  Position = ScreenCenter
   StyleBook = StyleBook1
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
   DesignerMasterStyle = 0
   object StyleBook1: TStyleBook
     Styles = <

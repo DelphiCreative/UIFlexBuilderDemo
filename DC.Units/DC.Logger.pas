@@ -40,7 +40,7 @@ begin
     Rewrite(LogFile);
 
   try
-     WriteLn(LogFile, '[' + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + '] [' + LogLevelToString(LogLevel) + '] ' + Msg);
+     WriteLn(LogFile, '[' + DateTimeToStr(Now) + '] [' + LogLevelToString(LogLevel) + '] ' + Msg);
   finally
     CloseFile(LogFile);
   end;

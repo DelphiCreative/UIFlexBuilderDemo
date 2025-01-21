@@ -18,10 +18,12 @@ type
     vsbUIList: TVertScrollBox;
     flwHeader: TFlowLayout;
     ImageList1: TImageList;
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
     { Public declarations }
+    function FindBitmapByName(const AName: string): TBitmap;
   end;
 
 var
@@ -31,4 +33,18 @@ implementation
 
 {$R *.fmx}
 
+uses FMX.UIFlexBuilder, FMX.UIFlexBuilder.Types, DC.Helper.Utils, UIFlexView;
+
+function TfrmMain.FindBitmapByName(const AName: string): TBitmap;
+begin
+  Result := ImageList1.BitmapByName(AName);
+end;
+
+procedure TfrmMain.FormCreate(Sender: TObject);
+begin
+   TFlexView.BuildMenu(Self, vsbUIMenu);
+end;
+
+initialization
+  ReportMemoryLeaksOnShutdown := True;
 end.

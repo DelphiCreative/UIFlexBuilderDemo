@@ -224,6 +224,16 @@
         <DCCReference Include="DC.Units\DC.Firedac.VersionControl.pas"/>
         <DCCReference Include="DC.Units\DC.Logger.pas"/>
         <DCCReference Include="Scripts\DC.DatabaseScripts.pas"/>
+        <DCCReference Include="DC.Units\DC.Helper.Utils.pas"/>
+        <DCCReference Include="UIFlex.Units\FMX.UIFlexBuilder.Classes.pas"/>
+        <DCCReference Include="UIFlex.Units\FMX.UIFlexBuilder.Dialogs.pas"/>
+        <DCCReference Include="UIFlex.Units\FMX.UIFlexBuilder.Forms.pas"/>
+        <DCCReference Include="UIFlex.Units\FMX.UIFlexBuilder.MaskEvents.pas"/>
+        <DCCReference Include="UIFlex.Units\FMX.UIFlexBuilder.pas"/>
+        <DCCReference Include="UIFlex.Units\FMX.UIFlexBuilder.Types.pas"/>
+        <DCCReference Include="UIFlex.Units\FMX.UIFlexBuilder.Utils.pas"/>
+        <DCCReference Include="DC.Units\DC.Utils.pas"/>
+        <DCCReference Include="UIFlexView.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -1221,12 +1231,6 @@
             <Platforms>
                 <Platform value="Android">True</Platform>
                 <Platform value="Android64">True</Platform>
-                <Platform value="iOSDevice32">False</Platform>
-                <Platform value="iOSDevice64">False</Platform>
-                <Platform value="iOSSimARM64">False</Platform>
-                <Platform value="OSX32">False</Platform>
-                <Platform value="OSX64">False</Platform>
-                <Platform value="OSXARM64">False</Platform>
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">True</Platform>
             </Platforms>
