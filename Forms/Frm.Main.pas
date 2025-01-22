@@ -33,7 +33,8 @@ implementation
 
 {$R *.fmx}
 
-uses FMX.UIFlexBuilder, FMX.UIFlexBuilder.Types, DC.Helper.Utils, UIFlexView;
+uses FMX.UIFlexBuilder, FMX.UIFlexBuilder.Types, DC.Helper.Utils, UIFlexView,
+  DM.Main;
 
 function TfrmMain.FindBitmapByName(const AName: string): TBitmap;
 begin
@@ -43,6 +44,8 @@ end;
 procedure TfrmMain.FormCreate(Sender: TObject);
 begin
    TFlexView.BuildMenu(Self, vsbUIMenu);
+   tabCategorias.Open('SELECT * FROM categorias');
+
 end;
 
 initialization
