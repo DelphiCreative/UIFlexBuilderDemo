@@ -15,8 +15,10 @@ type
      class procedure BuildMenu(AOwner : TComponent; ATarget : TVertScrollBox);
      class procedure CadastrarCategoria(TipoMovimento: String);
      class procedure CadastrarSubCategoria(ID, Categoria: String);
+     class procedure CadastrarContas(ID, Categoria: String);
      class procedure OnClickCadastrarCategoria(Sender: TObject);
      class procedure OnClickCadastrarSubcategoria(Sender: TObject);
+     class procedure OnClickCadastrarConta(Sender: TObject);
  end;
 
 implementation
@@ -41,8 +43,8 @@ begin
     .SetFieldSize(fsSmall)
 
     .AddTitle('Lançar')
-      .AddButton('Despesa').AddIcon(FindBitmapByName('Item 0'))
-      .AddButton('Receita').AddIcon(FindBitmapByName('Item 1'))
+      .AddButton('Despesa', OnClickCadastrarConta).AddIcon(FindBitmapByName('Item 0'))
+      .AddButton('Receita', OnClickCadastrarConta).AddIcon(FindBitmapByName('Item 1'))
 
     .AddTitle('Categorias')
        .AddButton('Despesa',OnClickCadastrarCategoria).AddIcon(FindBitmapByName('Item 3'))
@@ -85,6 +87,47 @@ begin
 
 end;
 
+class procedure TFlexView.CadastrarContas(ID, Categoria: String);
+var
+  FlexForm: TUIFlexForm;
+begin
+
+  tabContas.Open('SELECT * FROM contas ORDER BY id DESC LIMIT 1');
+
+  FlexForm := TUIFlexForm.Create('Lançar novo conta',700 );
+  try
+
+    FlexForm.FlexBuilder
+      .AddNewLine(10)
+      .AddEditField('id', 'Código', 50)
+      .AddEditField('ID_Categoria', 'Categoria', 300)
+          .SetText(Categoria)
+          .SetDefaultKeyValue(ID)
+
+      .AddEditSearch('ID_Subcategoria', 'SubCategoria','', 'Selecione uma subcategoria', tabSubCategorias, 300)
+
+      .AddEditField('descricao', 'Descrição', 600)
+      .AddEditField('NParcela', 'Parcelas', 50)
+         .SetText('1')
+      .AddEditField('DataVencimento', 'Data de vencimento','dd/mm/aaaa', 160, fmtDate)
+         .SetText(FormatDateTime('dd/mm/yyyy', Date))
+      .AddEditField('DataPagamento', 'Data de pagamento','dd/mm/aaaa', 160, fmtDate)
+      .AddEditField('Valor', 'Valor', '0,00', 160, fmtDecimal )
+      .AddEditField('ValorPago', 'Valor Pago', '0,00', 160, fmtDecimal);
+
+
+    FlexForm.AddButtonSaveAndCancel;
+
+    FlexForm.FlexBuilder.DataSet := tabContas;
+    FlexForm.FlexBuilder.KeyField := 'id';
+
+    FlexForm.Show;
+  finally
+    FlexForm.Free;
+  end;
+
+end;
+
 class procedure TFlexView.CadastrarSubCategoria(ID, Categoria: String);
 var
   FlexForm: TUIFlexForm;
@@ -121,6 +164,19 @@ end;
 class procedure TFlexView.OnClickCadastrarCategoria(Sender: TObject);
 begin
    CadastrarCategoria(TButton(Sender).TagString);
+end;
+
+class procedure TFlexView.OnClickCadastrarConta(Sender: TObject);
+var ID, Descricao, Retorno : String;
+begin
+   tabCategorias.Filtered := False;
+   tabCategorias.Filter := 'TipoMovimento = ' +  QuotedStr(TButton(Sender).TagString.Chars[0]);
+   tabCategorias.Filtered := True;
+
+   Retorno := TUIFlexForm.ShowForm('Lista de categorias', tabCategorias);
+   if ValidarRetornoFlexForm(Retorno, ID, Descricao) then
+       CadastrarContas(ID,Descricao);
+
 end;
 
 class procedure TFlexView.OnClickCadastrarSubcategoria(Sender: TObject);
