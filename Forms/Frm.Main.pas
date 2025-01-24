@@ -44,8 +44,8 @@ end;
 procedure TfrmMain.FormCreate(Sender: TObject);
 begin
    TFlexView.BuildMenu(Self, vsbUIMenu);
-   tabCategorias.Open('SELECT * FROM categorias');
-
+   tabCategorias.Open('SELECT * FROM categorias ORDER BY descricao');
+   tabSubCategorias.Open('SELECT * FROM subcategorias ORDER BY descricao');
 end;
 
 initialization
