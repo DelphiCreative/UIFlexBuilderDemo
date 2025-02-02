@@ -12,13 +12,16 @@ const
   LANCAR_SUBCATEGORIA = 2;
 
 type
+  TTipoCadastro = (tcCategoria, tcSubCategoria);
+
+type
   TFlexView = class
   public
      class function FindBitmapByName(const AName: string): TBitmap;
      class function ValidarRetornoFlexForm(const AInput: String; out AID, AValue: String): Boolean;
      class procedure BuildMenu(AOwner : TComponent; ATarget : TVertScrollBox);
-     class procedure CadastrarCategoria(TipoMovimento: String);
-     class procedure CadastrarSubCategoria(ID, Categoria: String);
+
+     class procedure CadastrarSubCategoria(const AID, ACategoria: String; AFDQuery: TFDQuery; ATipo :TTipoCadastro = tcCategoria);
      class procedure CadastrarContas(ID, Categoria: String);
      class procedure OnClickCadastrarCategoria(Sender: TObject);
      class procedure OnClickCadastrarConta(Sender: TObject);
@@ -112,56 +115,49 @@ begin
 
 end;
 
-class procedure TFlexView.CadastrarCategoria(TipoMovimento: String);
-var
-   FlexForm : TUIFlexForm;
-begin
-
-   FlexForm := TUIFlexForm.Create('Cadastro de categorias');
-
-   try
-      FlexForm.FlexBuilder
-       .AddNewLine(5)
-       .AddEditField('id', 'Código', 50)
-       .AddEditField('descricao', 'Descrição', 315)
-       .AddEditField('TipoMovimento', 'Tipo', 80)
-          .SetText(TipoMovimento.ToUpper)
-          .SetDefaultKeyValue(TipoMovimento.Chars[0]);
-
-      FlexForm.AddButtonSaveAndCancel;
-
-      FlexForm.AddValidationRule('descricao','"NotEmpty" : true');
-
-      FlexForm.FlexBuilder.DataSet := tabCategorias;
-      FlexForm.FlexBuilder.KeyField := 'id';
-
-      FlexForm.Show;
-   finally
-     FlexForm.Free;
-   end;
-
-end;
-
-
-class procedure TFlexView.CadastrarSubCategoria(ID, Categoria: String);
+class procedure TFlexView.CadastrarSubCategoria(const AID, ACategoria: String; AFDQuery: TFDQuery; ATipo :TTipoCadastro = tcCategoria);
 var
   FlexForm: TUIFlexForm;
+  Titulo: String;
+  Largura: Single;
 begin
 
-  FlexForm := TUIFlexForm.Create('Cadastrar subcategoria');
+  case ATipo of
+
+    tcCategoria:
+    begin
+       Titulo := 'Cadastro de categorias' ;
+       Largura := 315;
+    end;
+
+    tcSubCategoria:
+    begin
+       Titulo := 'Cadastrar subcategoria' ;
+       Largura := 400;
+    end;
+  end;
+
+  FlexForm := TUIFlexForm.Create(Titulo);
+
   try
     FlexForm.FlexBuilder.AddNewLine(5)
       .AddEditField('id', 'Código', 50)
-      .AddEditField('descricao', 'Descrição', 400)
-      .AddEditField('ID_Categoria', 'Tipo', 450)
-        .SetText(Categoria)
-        .SetDefaultKeyValue(ID);
+      .AddEditField('descricao', 'Descrição', Largura);
+
+    if ATipo = tcCategoria then
+       FlexForm.FlexBuilder.AddEditField('TipoMovimento', 'Tipo', 80)
+    else
+       FlexForm.FlexBuilder.AddEditField('ID_Categoria', 'Tipo', 450);
+
+    FlexForm.FlexBuilder
+        .SetText(ACategoria)
+        .SetDefaultKeyValue(AID);
 
     FlexForm.AddButtonSaveAndCancel;
 
     FlexForm.AddValidationRule('descricao','"NotEmpty": true');
 
-    FlexForm.FlexBuilder.DataSet := tabSubCategorias;
+    FlexForm.FlexBuilder.DataSet := AFDQuery;
     FlexForm.FlexBuilder.KeyField := 'id';
 
     FlexForm.Show;
@@ -178,9 +174,7 @@ end;
 
 class procedure TFlexView.OnClickCadastrarCategoria(Sender: TObject);
 begin
-   ShowMessage(TButton(Sender).Tag.ToString);
-
-   CadastrarCategoria(TButton(Sender).TagString);
+   CadastrarSubCategoria(TButton(Sender).TagString.Chars[0],TButton(Sender).TagString, tabCategorias);
 end;
 
 class procedure TFlexView.OnClickCadastrarConta(Sender: TObject);
@@ -195,7 +189,7 @@ begin
 
        case TButton(Sender).Tag of
           LANCAR_CONTA : CadastrarContas(ID,Descricao);
-          LANCAR_SUBCATEGORIA: CadastrarSubCategoria(ID,Descricao);
+          LANCAR_SUBCATEGORIA: CadastrarSubCategoria(ID,Descricao, tabSubCategorias, tcSubCategoria);
        end;
    end;
 end;
