@@ -3,6 +3,7 @@ unit UIFlexView;
 interface
 
 uses
+  System.DateUtils,
   FireDAC.Comp.DataSet, FireDAC.Comp.Client, FMX.UIFlexBuilder,
   FMX.Dialogs, FMX.StdCtrls, System.StrUtils, System.SysUtils,
   System.Classes, FMX.Layouts,FMX.Graphics,  System.UITypes;
@@ -20,6 +21,7 @@ type
      class function FindBitmapByName(const AName: string): TBitmap;
      class function ValidarRetornoFlexForm(const AInput: String; out AID, AValue: String): Boolean;
      class procedure BuildMenu(AOwner : TComponent; ATarget : TVertScrollBox);
+     class procedure BuildHeader(AFlexBuilder: TUIFlexBuilder);
      class procedure CadastrarItem(const AID, AValue: String; AFDQuery: TFDQuery; ATipo :TTipoCadastro = tcCategoria);
      class procedure CadastrarContas(const AID, ACategoria: String; const ATabContas, ATabSubcategorias: TFDQuery);
      class procedure OnClickCadastrarCategoria(Sender: TObject);
@@ -32,6 +34,29 @@ implementation
 
 uses  FMX.UIFlexBuilder.Types, Frm.Main,
   FMX.UIFlexBuilder.Forms, DM.Main;
+
+
+class procedure TFlexView.BuildHeader(AFlexBuilder: TUIFlexBuilder);
+begin
+  AFlexBuilder.AddTitle('Lista de contas no período')
+
+    // Campo para data de vencimento inicial
+    .AddEditField('VencimentoInicial', 'Vencimento Inicial', 'dd/mm/aaaa', 160, fmtDate)
+      .SetText(FormatDateTime('dd/mm/yyyy', StartOfTheMonth(Date)))
+
+    // Campo para data de vencimento final
+    .AddEditField('VencimentoFinal', 'Vencimento Final', 'dd/mm/aaaa', 160, fmtDate)
+      .SetText(FormatDateTime('dd/mm/yyyy', EndOfTheMonth(Date)));
+
+  AFlexBuilder.SetFieldSize(fsSmall)
+
+    // Botão para consultar registros
+    .AddButton('Consultar')
+    .SetMargins(10, 27, 0, 0)
+    .SetWidth(100)
+    .AddIcon(FindBitmapByName('pesquisar'));
+
+end;
 
 class procedure TFlexView.BuildMenu(AOwner: TComponent;
   ATarget: TVertScrollBox);
@@ -192,8 +217,8 @@ begin
    if ValidarRetornoFlexForm(Retorno, ID, Descricao) then begin
 
        case TButton(Sender).Tag of
-          LANCAR_CONTA : CadastrarContas(ID,Descricao, tabContas, tabSubCategorias);
-          LANCAR_SUBCATEGORIA: CadastrarItem(ID,Descricao, tabSubCategorias, tcSubCategoria);
+          LANCAR_CONTA : CadastrarContas(ID, Descricao, tabContas, tabSubCategorias);
+          LANCAR_SUBCATEGORIA: CadastrarItem(ID, Descricao, tabSubCategorias, tcSubCategoria);
        end;
    end;
 end;

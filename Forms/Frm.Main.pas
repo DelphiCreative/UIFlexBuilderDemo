@@ -20,10 +20,12 @@ type
     flwHeader: TFlowLayout;
     ImageList1: TImageList;
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
   private
     { Private declarations }
   public
     { Public declarations }
+    FlexHeader: TUIFlexBuilder;
     function FindBitmapByName(const AName: string): TBitmap;
   end;
 
@@ -44,9 +46,18 @@ end;
 
 procedure TfrmMain.FormCreate(Sender: TObject);
 begin
+   FlexHeader := TUIFlexBuilder.Create(Self,flwHeader);
+
    TFlexView.BuildMenu(Self, vsbUIMenu);
+   TFlexView.BuildHeader(FlexHeader);
+
    tabCategorias.Open('SELECT * FROM categorias ORDER BY descricao');
    tabSubCategorias.Open('SELECT * FROM subcategorias ORDER BY descricao');
+end;
+
+procedure TfrmMain.FormDestroy(Sender: TObject);
+begin
+  FlexHeader.Free;
 end;
 
 initialization
