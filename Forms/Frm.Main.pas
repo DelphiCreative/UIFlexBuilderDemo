@@ -3,6 +3,7 @@ unit Frm.Main;
 interface
 
 uses
+  FMX.UIFlexBuilder, FMX.UIFlexBuilder.Dialogs,
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   System.ImageList, FMX.ImgList, FMX.Layouts, FMX.Effects, FMX.Objects;
@@ -33,7 +34,7 @@ implementation
 
 {$R *.fmx}
 
-uses FMX.UIFlexBuilder, FMX.UIFlexBuilder.Types, DC.Helper.Utils, UIFlexView,
+uses  FMX.UIFlexBuilder.Types, DC.Helper.Utils, UIFlexView,
   DM.Main;
 
 function TfrmMain.FindBitmapByName(const AName: string): TBitmap;

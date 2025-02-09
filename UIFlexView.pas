@@ -3,7 +3,7 @@ unit UIFlexView;
 interface
 
 uses
-  FireDAC.Comp.DataSet, FireDAC.Comp.Client,
+  FireDAC.Comp.DataSet, FireDAC.Comp.Client, FMX.UIFlexBuilder,
   FMX.Dialogs, FMX.StdCtrls, System.StrUtils, System.SysUtils,
   System.Classes, FMX.Layouts,FMX.Graphics,  System.UITypes;
 
@@ -20,18 +20,17 @@ type
      class function FindBitmapByName(const AName: string): TBitmap;
      class function ValidarRetornoFlexForm(const AInput: String; out AID, AValue: String): Boolean;
      class procedure BuildMenu(AOwner : TComponent; ATarget : TVertScrollBox);
-
-     class procedure CadastrarSubCategoria(const AID, ACategoria: String; AFDQuery: TFDQuery; ATipo :TTipoCadastro = tcCategoria);
-     class procedure CadastrarContas(ID, Categoria: String);
+     class procedure CadastrarItem(const AID, AValue: String; AFDQuery: TFDQuery; ATipo :TTipoCadastro = tcCategoria);
+     class procedure CadastrarContas(const AID, ACategoria: String; const ATabContas, ATabSubcategorias: TFDQuery);
      class procedure OnClickCadastrarCategoria(Sender: TObject);
      class procedure OnClickCadastrarConta(Sender: TObject);
- end;
+  end;
 
 implementation
 
 { TFlexView }
 
-uses FMX.UIFlexBuilder, FMX.UIFlexBuilder.Types, Frm.Main,
+uses  FMX.UIFlexBuilder.Types, Frm.Main,
   FMX.UIFlexBuilder.Forms, DM.Main;
 
 class procedure TFlexView.BuildMenu(AOwner: TComponent;
@@ -74,12 +73,17 @@ begin
 end;
 
 
-class procedure TFlexView.CadastrarContas(ID, Categoria: String);
+class procedure TFlexView.CadastrarContas(const AID, ACategoria: String;const ATabContas, ATabSubcategorias: TFDQuery);
 var
   FlexForm: TUIFlexForm;
 begin
 
-  tabContas.Open('SELECT * FROM contas ORDER BY id DESC LIMIT 1');
+  ATabContas.Open('SELECT * FROM contas ORDER BY id DESC LIMIT 1');
+
+  ATabSubcategorias.Filtered := False;
+  ATabSubcategorias.Filter := 'ID_Categoria =' + QuotedStr(AID);
+  ATabSubcategorias.Filtered := True;
+
 
   FlexForm := TUIFlexForm.Create('Lançar novo conta',700 );
   try
@@ -88,10 +92,10 @@ begin
       .AddNewLine(10)
       .AddEditField('id', 'Código', 50)
       .AddEditField('ID_Categoria', 'Categoria', 300)
-          .SetText(Categoria)
-          .SetDefaultKeyValue(ID)
+          .SetText(ACategoria)
+          .SetDefaultKeyValue(AID)
 
-      .AddEditSearch('ID_Subcategoria', 'SubCategoria','', 'Selecione uma subcategoria', tabSubCategorias, 300)
+      .AddEditSearch('ID_Subcategoria', 'SubCategoria','', 'Selecione uma subcategoria', ATabSubcategorias, 300)
 
       .AddEditField('descricao', 'Descrição', 600)
       .AddEditField('NParcela', 'Parcelas', 50)
@@ -105,7 +109,7 @@ begin
 
     FlexForm.AddButtonSaveAndCancel;
 
-    FlexForm.FlexBuilder.DataSet := tabContas;
+    FlexForm.FlexBuilder.DataSet := ATabContas;
     FlexForm.FlexBuilder.KeyField := 'id';
 
     FlexForm.Show;
@@ -115,7 +119,7 @@ begin
 
 end;
 
-class procedure TFlexView.CadastrarSubCategoria(const AID, ACategoria: String; AFDQuery: TFDQuery; ATipo :TTipoCadastro = tcCategoria);
+class procedure TFlexView.CadastrarItem(const AID, AValue: String; AFDQuery: TFDQuery; ATipo :TTipoCadastro = tcCategoria);
 var
   FlexForm: TUIFlexForm;
   Titulo: String;
@@ -150,7 +154,7 @@ begin
        FlexForm.FlexBuilder.AddEditField('ID_Categoria', 'Tipo', 450);
 
     FlexForm.FlexBuilder
-        .SetText(ACategoria)
+        .SetText(AValue)
         .SetDefaultKeyValue(AID);
 
     FlexForm.AddButtonSaveAndCancel;
@@ -174,7 +178,7 @@ end;
 
 class procedure TFlexView.OnClickCadastrarCategoria(Sender: TObject);
 begin
-   CadastrarSubCategoria(TButton(Sender).TagString.Chars[0],TButton(Sender).TagString, tabCategorias);
+   CadastrarItem(TButton(Sender).TagString.Chars[0],TButton(Sender).TagString, tabCategorias);
 end;
 
 class procedure TFlexView.OnClickCadastrarConta(Sender: TObject);
@@ -188,8 +192,8 @@ begin
    if ValidarRetornoFlexForm(Retorno, ID, Descricao) then begin
 
        case TButton(Sender).Tag of
-          LANCAR_CONTA : CadastrarContas(ID,Descricao);
-          LANCAR_SUBCATEGORIA: CadastrarSubCategoria(ID,Descricao, tabSubCategorias, tcSubCategoria);
+          LANCAR_CONTA : CadastrarContas(ID,Descricao, tabContas, tabSubCategorias);
+          LANCAR_SUBCATEGORIA: CadastrarItem(ID,Descricao, tabSubCategorias, tcSubCategoria);
        end;
    end;
 end;
