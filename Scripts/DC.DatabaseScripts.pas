@@ -62,13 +62,22 @@ type
     class function GetCategorias(ASQL: string = ''): string;
 
     class function GetSubcategorias(ASQL: string = ''): string;
-
+    class function UpdateParcelas(AID: string): string;
     class function DeleteParcelas(AID: string): string;
 
   end;
 
 implementation
 
+class function TDatabaseScripts.UpdateParcelas(AID: string): string;
+begin
+   Result := 'UPDATE Parcelas '+
+             '  SET '+
+             '   DataPagamento = IIF(DataPagamento IS NULL, strftime("%Y-%m-%d",DateTime()),NULL), '+
+             '   ValorPago = IIF(DataPagamento IS NULL, Valor, NULL) '+
+             '  WHERE ID IN ('+QuotedStr(AID)+')';
+
+end;
 class function TDatabaseScripts.DeleteParcelas(AID: string): string;
 begin
    Result := 'DELETE FROM Parcelas WHERE ID = ' + QuotedStr(AID);
@@ -81,115 +90,101 @@ end;
 
 class function TDatabaseScripts.GetCreateTableCategoriasScript: string;
 begin
-  Result := '''
-    CREATE TABLE IF NOT EXISTS Categorias(
-      ID INTEGER PRIMARY KEY AUTOINCREMENT,
-      Descricao VARCHAR(100) NOT NULL,
-      TipoMovimento CHAR(1) );
-  ''';
+  Result := 'CREATE TABLE IF NOT EXISTS Categorias( '+
+            ' ID INTEGER PRIMARY KEY AUTOINCREMENT, '+
+            ' Descricao VARCHAR(100) NOT NULL, ' +
+            ' TipoMovimento CHAR(1) ); ' ;
 end;
 
 class function TDatabaseScripts.GetCreateTriggerValidarCategoriasScript: string;
 begin
-  Result := '''
-    DROP TRIGGER IF EXISTS ValidarCategorias;
-
-    CREATE TRIGGER IF NOT EXISTS ValidarCategorias
-    BEFORE INSERT ON Categorias
-    BEGIN
-      SELECT
-        CASE
-          WHEN (NEW.Descricao IS NULL) OR (NEW.Descricao = '') THEN RAISE (ABORT,"Informe uma descrição! ")
-          WHEN 0 < (SELECT COUNT(*) FROM Categorias WHERE LOWER(Descricao) = LOWER(NEW.Descricao)) THEN RAISE (ABORT, "Categoria já cadastrada! ")
-        END;
-    END;
-  ''';
+  Result := 'DROP TRIGGER IF EXISTS ValidarCategorias;'+
+            'CREATE TRIGGER IF NOT EXISTS ValidarCategorias'+
+            ' BEFORE INSERT ON Categorias'+
+            ' BEGIN'+
+            '  SELECT'+
+            '    CASE'+
+            '      WHEN (NEW.Descricao IS NULL) OR (NEW.Descricao = '''') THEN RAISE (ABORT, "Informe uma descrição! ")'+
+            '      WHEN 0 < (SELECT COUNT(*) FROM Categorias WHERE LOWER(Descricao) = LOWER(NEW.Descricao)) THEN RAISE (ABORT, "Categoria já cadastrada! ")'+
+            '    END;'+
+            'END;'
 end;
 
 class function TDatabaseScripts.GetInsertIntoCategoriasScript: string;
 begin
-  Result := '''
-    INSERT INTO Categorias
-     (Descricao, TipoMovimento)
-    VALUES
-     ("SALÁRIO","R"),
-     ("PRESTAÇÃO DE SERVIÇO","R"),
-     ("SUPERMERCADO","D"),
-     ("FAST FOOD","D"),
-     ("ASSINATURA","D"),
-     ("COMBUSTÍVEL","D"),
-     ("EDUCAÇÃO","D"),
-     ("LAZER","D"),
-     ("MORADIA","D"),
-     ("SAÚDE","D"),
-     ("TRANSPORTE","D"),
-     ("VIAGEM","D"),
-     ("VESTUÁRIO","D");
-  ''';
+  Result := ' INSERT INTO Categorias '+
+            '  (Descricao, TipoMovimento) '+
+            ' VALUES '+
+            '  ("SALÁRIO","R"), '+
+            '  ("PRESTAÇÃO DE SERVIÇO","R"), '+
+            '  ("SUPERMERCADO","D"), '+
+            '  ("FAST FOOD","D"), '+
+            '  ("ASSINATURA","D"), '+
+            '  ("COMBUSTÍVEL","D"), '+
+            '  ("EDUCAÇÃO","D"), '+
+            '  ("LAZER","D"), '+
+            '  ("MORADIA","D"), '+
+            '  ("SAÚDE","D"), '+
+            '  ("TRANSPORTE","D"), '+
+            '  ("VIAGEM","D"), '+
+            '  ("VESTUÁRIO","D"); ';
 end;
 
 class function TDatabaseScripts.GetCreateTableSubCategoriasScript: string;
 begin
-  Result := '''
-    CREATE TABLE IF NOT EXISTS SubCategorias(
-      ID INTEGER PRIMARY KEY AUTOINCREMENT,
-      Descricao VARCHAR(100) NOT NULL,
-      ID_Categoria INTEGER,
-      TipoMovimento CHAR(1));
-  ''';
+  Result := 'CREATE TABLE IF NOT EXISTS SubCategorias( '+
+            '  ID INTEGER PRIMARY KEY AUTOINCREMENT, '+
+            '  Descricao VARCHAR(100) NOT NULL, '+
+            '  ID_Categoria INTEGER, '+
+            '  TipoMovimento CHAR(1)); ';
 end;
 
 class function TDatabaseScripts.GetCreateTriggerValidarSubCategoriasScript: string;
 begin
-  Result := '''
-    DROP TRIGGER IF EXISTS ValidarSubCategorias;
+  Result := 'DROP TRIGGER IF EXISTS ValidarSubCategorias;'+
+            'CREATE TRIGGER IF NOT EXISTS ValidarSubCategorias'+
+            ' BEFORE INSERT ON SubCategorias'+
+            ' BEGIN'+
+            '  SELECT'+
+            '    CASE'+
+            '      WHEN (NEW.Descricao IS NULL) OR (NEW.Descricao = '''') THEN RAISE (ABORT,"Informe uma descrição! ")'+
+            '      WHEN 0 < (SELECT COUNT(*) FROM SubCategorias WHERE LOWER(Descricao) = LOWER(NEW.Descricao) AND ID_Categoria = NEW.ID_Categoria) THEN RAISE (ABORT, "Subcategoria já cadastrada! ")'+
+            '    END;'+
+            ' END;';
 
-    CREATE TRIGGER IF NOT EXISTS ValidarSubCategorias
-    BEFORE INSERT ON SubCategorias
-    BEGIN
-      SELECT
-        CASE
-          WHEN (NEW.Descricao IS NULL) OR (NEW.Descricao = '') THEN RAISE (ABORT,"Informe uma descrição! ")
-          WHEN 0 < (SELECT COUNT(*) FROM SubCategorias WHERE LOWER(Descricao) = LOWER(NEW.Descricao) AND ID_Categoria = NEW.ID_Categoria) THEN RAISE (ABORT, "Subcategoria já cadastrada! ")
-        END;
-    END;
-  ''';
-end;
+ end;
 
 class function TDatabaseScripts.GetCreateTableContasScript: string;
 begin
-  Result := '''
-    CREATE TABLE IF NOT EXISTS Contas(
-      ID INTEGER PRIMARY KEY AUTOINCREMENT,
-      Descricao VARCHAR(500),
-      ID_Subcategoria INTEGER,
-      NParcela INT,
-      Valor FLOAT(15,2),
-      TipoMovimento CHAR(1),
-      DataVencimento DATETIME,
-      ID_Categoria INTEGER,
-      ValorPago FLOAT(15,2),
-      DataPagamento DATETIME,
-      Observacoes TEXT);
-  ''';
+  Result := 'CREATE TABLE IF NOT EXISTS Contas( '+
+            '  ID INTEGER PRIMARY KEY AUTOINCREMENT, '+
+            '  Descricao VARCHAR(500), '+
+            '  ID_Subcategoria INTEGER, '+
+            '  NParcela INT, '+
+            '  Valor FLOAT(15,2), '+
+            '  TipoMovimento CHAR(1), '+
+            '  DataVencimento DATETIME, '+
+            '  ID_Categoria INTEGER, '+
+            '  ValorPago FLOAT(15,2), '+
+            '  DataPagamento DATETIME, '+
+            '  Observacoes TEXT); ';
 end;
 
 class function TDatabaseScripts.GetCreateTriggerValidarContasScript: string;
 begin
-  Result := '''
-    CREATE TRIGGER IF NOT EXISTS ValidarContas
-    BEFORE INSERT ON Contas
-    BEGIN
-      SELECT
-        CASE
-          WHEN NEW.NParcela IS NULL OR NEW.NParcela = 0 THEN RAISE (ABORT,"Informe o número de parcelas")
-          WHEN NEW.Valor IS NULL OR NEW.Valor = 0 THEN RAISE (ABORT,"Informe o valor da parcela")
-          WHEN NEW.DataVencimento IS NULL THEN RAISE (ABORT,"Informe o 1º vencimento")
-          WHEN NEW.ID_Categoria IS NULL THEN RAISE (ABORT,"Informe uma categoria ! ")
-          WHEN (SELECT TipoMovimento FROM Categorias WHERE ID = NEW.ID_Categoria) IS NULL THEN RAISE (ABORT, "Tipo de movimento inválido para a categoria selecionada")
-        END;
-    END;
-  ''';
+  Result := 'CREATE TRIGGER IF NOT EXISTS ValidarContas '+
+            'BEFORE INSERT ON Contas '+
+            'BEGIN '+
+            '  SELECT '+
+            '    CASE '+
+            '      WHEN NEW.NParcela IS NULL OR NEW.NParcela = 0 THEN RAISE (ABORT,"Informe o número de parcelas") '+
+            '      WHEN NEW.Valor IS NULL OR NEW.Valor = 0 THEN RAISE (ABORT,"Informe o valor da parcela") '+
+            '      WHEN NEW.DataVencimento IS NULL THEN RAISE (ABORT,"Informe o 1º vencimento") '+
+            '      WHEN NEW.ID_Categoria IS NULL THEN RAISE (ABORT,"Informe uma categoria ! ") '+
+            '      WHEN (SELECT TipoMovimento FROM Categorias WHERE ID = NEW.ID_Categoria) IS NULL THEN RAISE (ABORT, "Tipo de movimento inválido para a categoria selecionada") '+
+            '    END; '+
+            'END; ';
+
 end;
 
 class function TDatabaseScripts.GetParcelas(ASQL: string): string;
@@ -203,7 +198,7 @@ begin
             '  P.ID_Conta,' +
             '  SUM(Valor) ValorParcela,' +
             '  DataPagamento Pagamento,' +
-            '  SUM(ValorPago) ValorPago,' +
+            '  Replace(printf("R$ %.2f",SUM(ValorPago)),".",",") AS ValorPago,' +
             '  NParcela,' +
             '  (NParcela ||''/''|| (SELECT Count(*) FROM Parcelas P1 WHERE P1.ID_Conta = P.ID_Conta)) NParcelas,' +
             '  P.Descricao Descricao_Parcela,' +
@@ -232,50 +227,45 @@ end;
 
 class function TDatabaseScripts.GetCreateTableParcelasScript: string;
 begin
-  Result := '''
-    CREATE TABLE IF NOT EXISTS Parcelas(
-      ID INTEGER PRIMARY KEY AUTOINCREMENT,
-      ID_Subcategoria INTEGER,
-      ID_Conta INTEGER,
-      ID_Categoria INTEGER,
-      TipoMovimento CHAR(1),
-      NParcela INT,
-      Descricao VARCHAR(500),
-      Valor FLOAT(15,2),
-      ValorPago FLOAT(15,2),
-      DataVencimento DATETIME,
-      DataPagamento DATETIME,
-      Observacoes TEXT);
-  ''';
+  Result := 'CREATE TABLE IF NOT EXISTS Parcelas( '+
+            '  ID INTEGER PRIMARY KEY AUTOINCREMENT, '+
+            '  ID_Subcategoria INTEGER, '+
+            '  ID_Conta INTEGER, '+
+            '  ID_Categoria INTEGER, '+
+            '  TipoMovimento CHAR(1), '+
+            '  NParcela INT, '+
+            '  Descricao VARCHAR(500), '+
+            '  Valor FLOAT(15,2), '+
+            '  ValorPago FLOAT(15,2), '+
+            '  DataVencimento DATETIME, '+
+            '  DataPagamento DATETIME, '+
+            '  Observacoes TEXT); ';
 end;
 
 
 class function TDatabaseScripts.GetCreateTriggerGerarPrimeiraParcelaScript: string;
 begin
-  Result := '''
-    DROP TRIGGER IF EXISTS GerarPrimeiraParcela;
+  Result := 'DROP TRIGGER IF EXISTS GerarPrimeiraParcela; '+
 
-    CREATE TRIGGER GerarPrimeiraParcela
-       AFTER INSERT ON Contas
-       BEGIN
-       INSERT INTO Parcelas(Descricao, ID_Subcategoria, NParcela, Valor, DataPagamento, DataVencimento, ID_Categoria, Observacoes, ID_Conta, TipoMovimento, ValorPago)
-       VALUES (NEW.Descricao, NEW.ID_Subcategoria, 1, NEW.Valor, Date(NEW.DataPagamento), Date(NEW.DataVencimento), NEW.ID_Categoria, NEW.Observacoes, NEW.ID, NEW.TipoMovimento, NEW.ValorPago);
-    END;
-  ''';
+            'CREATE TRIGGER GerarPrimeiraParcela '+
+            '   AFTER INSERT ON Contas '+
+            '   BEGIN '+
+            '   INSERT INTO Parcelas(Descricao, ID_Subcategoria, NParcela, Valor, DataPagamento, DataVencimento, ID_Categoria, Observacoes, ID_Conta, TipoMovimento, ValorPago) '+
+            '   VALUES (NEW.Descricao, NEW.ID_Subcategoria, 1, NEW.Valor, Date(NEW.DataPagamento), Date(NEW.DataVencimento), NEW.ID_Categoria, NEW.Observacoes, NEW.ID, NEW.TipoMovimento, NEW.ValorPago); '+
+            'END; ';
+
 end;
 
 class function TDatabaseScripts.GetCreateTriggerGerarParcelasScript: string;
 begin
-  Result := '''
-    DROP TRIGGER IF EXISTS GerarParcelas;
+  Result := 'DROP TRIGGER IF EXISTS GerarParcelas; '+
 
-    CREATE TRIGGER IF NOT EXISTS GerarParcelas
-       BEFORE INSERT ON Parcelas
-       WHEN NEW.NParcela <> (SELECT NParcela FROM Contas ORDER BY ID DESC LIMIT 1) BEGIN
-       INSERT INTO Parcelas(TipoMovimento, Descricao, ID_Subcategoria, ID_Conta, NParcela, Valor, ValorPago, DataVencimento, DataPagamento, ID_Categoria, Observacoes)
-       VALUES (NEW.TipoMovimento, NEW.Descricao, NEW.ID_Subcategoria, NEW.ID_Conta, NEW.NParcela + 1, NEW.Valor, NEW.ValorPago, Date(NEW.DataVencimento, "+1 month"), NEW.DataPagamento, NEW.ID_Categoria, NEW.Observacoes);
-    END;
-  ''';
+            'CREATE TRIGGER IF NOT EXISTS GerarParcelas '+
+            '   BEFORE INSERT ON Parcelas '+
+            '   WHEN NEW.NParcela <> (SELECT NParcela FROM Contas ORDER BY ID DESC LIMIT 1) BEGIN '+
+            '   INSERT INTO Parcelas(TipoMovimento, Descricao, ID_Subcategoria, ID_Conta, NParcela, Valor, ValorPago, DataVencimento, DataPagamento, ID_Categoria, Observacoes) '+
+            '   VALUES (NEW.TipoMovimento, NEW.Descricao, NEW.ID_Subcategoria, NEW.ID_Conta, NEW.NParcela + 1, NEW.Valor, NEW.ValorPago, Date(NEW.DataVencimento, "+1 month"), NEW.DataPagamento, NEW.ID_Categoria, NEW.Observacoes); '+
+            'END; ';
 end;
 
 end.

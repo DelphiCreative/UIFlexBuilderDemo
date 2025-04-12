@@ -32,6 +32,7 @@ type
 var
   frmMain: TfrmMain;
 
+
 implementation
 
 {$R *.fmx}
@@ -46,10 +47,13 @@ end;
 
 procedure TfrmMain.FormCreate(Sender: TObject);
 begin
+
    FlexHeader := TUIFlexBuilder.Create(Self,flwHeader);
 
    TFlexView.BuildMenu(Self, vsbUIMenu);
    TFlexView.BuildHeader(FlexHeader);
+
+
 
    tabCategorias.Open('SELECT * FROM categorias ORDER BY descricao');
    tabSubCategorias.Open('SELECT * FROM subcategorias ORDER BY descricao');

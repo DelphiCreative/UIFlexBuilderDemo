@@ -3,38 +3,80 @@ unit UIFlexView;
 interface
 
 uses
+  FireDAC.Comp.Client,
+  FireDAC.Comp.DataSet,
+  FMX.Controls,
+  FMX.Dialogs,
+  FMX.Graphics,
+  FMX.Layouts,
+  FMX.StdCtrls,
+  FMX.Types,
+  FMX.UIFlexBuilder,
+  System.Classes,
   System.DateUtils,
-  FireDAC.Comp.DataSet, FireDAC.Comp.Client, FMX.UIFlexBuilder,
-  FMX.Dialogs, FMX.StdCtrls, System.StrUtils, System.SysUtils,
-  System.Classes, FMX.Layouts,FMX.Graphics,  System.UITypes;
+  System.StrUtils,
+  System.SysUtils,
+  System.UITypes;
 
 const
   LANCAR_CONTA = 1;
   LANCAR_SUBCATEGORIA = 2;
 
+  WIDTH_DESCRICAO = 200;
+  WIDTH_STATUS = 70;
+  WIDTH_VENCIMENTO = 80;
+  WIDTH_VALOR = 80;
+  WIDTH_DATA_PAGAMENTO = 80;
+  WIDTH_VALOR_PAGO = 80;
+
 type
   TTipoCadastro = (tcCategoria, tcSubCategoria);
 
 type
+  TFormularioConfig = record
+    Titulo: String;
+    Largura: Single;
+    class function Create(const ATitulo: String; ALargura: Single): TFormularioConfig; static;
+  end;
+
+type
+  TFlexTheme = class
+  public
+    class procedure ApplyHeaderStyle(ABuilder: TUIFlexBuilder); static;
+    class procedure ApplyButtonPrimary(ABuilder: TUIFlexBuilder); static;
+    class procedure ApplyButtonDanger(ABuilder: TUIFlexBuilder); static;
+    class procedure ApplyListRowStyle(ABuilder: TUIFlexBuilder); static;
+    class procedure ApplyMenuStyle(ABuilder: TUIFlexBuilder); static;
+  end;
+
+type
   TFlexView = class
   public
+     class function CreateLayout(AControl: TControl; AHeight: Single): TFlowLayout;
      class function FindBitmapByName(const AName: string): TBitmap;
-     class function ValidarRetornoFlexForm(const AInput: String; out AID, AValue: String): Boolean;
-     class procedure BuildMenu(AOwner : TComponent; ATarget : TVertScrollBox);
+     class function ValidateFlexFormReturn(const AInput: String; out AID, AValue: String): Boolean;
+     class procedure BuildList(AOwner: TComponent; AVertTarget: TVertScrollBox; AFDQuery: TFDQuery);
      class procedure BuildHeader(AFlexBuilder: TUIFlexBuilder);
-     class procedure CadastrarItem(const AID, AValue: String; AFDQuery: TFDQuery; ATipo :TTipoCadastro = tcCategoria);
-     class procedure CadastrarContas(const AID, ACategoria: String; const ATabContas, ATabSubcategorias: TFDQuery);
-     class procedure OnClickCadastrarCategoria(Sender: TObject);
-     class procedure OnClickCadastrarConta(Sender: TObject);
-  end;
+     class procedure BuildMenu(AOwner : TComponent; ATarget : TVertScrollBox);
+     class procedure RegisterItem(const AID, AValue: String; AFDQuery: TFDQuery; ATipo :TTipoCadastro = tcCategoria);
+     class procedure RegisterContas(const AID, ACategoria: String; const ATabContas, ATabSubcategorias: TFDQuery);
+     class procedure LoadContas(AFlexBuilder: TUIFlexBuilder);
+     class procedure UpdateItemInList(const AID: String);
+     class procedure DeleteItemFromList(const AID: String);
+     class procedure OnClickUpdateItem(Sender: TObject);
+     class procedure OnClickDeleteItem(Sender: TObject);
+     class procedure OnClickRegisterCategoria(Sender: TObject);
+     class procedure OnClickRegisterConta(Sender: TObject);
+     class procedure OnClickConsultContas(Sender: TObject);
+ end;
 
 implementation
 
 { TFlexView }
 
 uses  FMX.UIFlexBuilder.Types, Frm.Main,
-  FMX.UIFlexBuilder.Forms, DM.Main;
-
+  FMX.UIFlexBuilder.Forms, DM.Main, FMX.UIFlexBuilder.Dialogs,
+  DC.DatabaseScripts, FMX.UIFlexBuilder.Utils;
 
 class procedure TFlexView.BuildHeader(AFlexBuilder: TUIFlexBuilder);
 begin
@@ -49,13 +91,94 @@ begin
       .SetText(FormatDateTime('dd/mm/yyyy', EndOfTheMonth(Date)));
 
   AFlexBuilder.SetFieldSize(fsSmall)
-
+     .SetButtonColor(TAlphaColors.Darkcyan, TAlphaColors.Cadetblue)
+     .SetButtonTextColor(TAlphaColors.Ghostwhite, TAlphaColors.Ghostwhite)
     // Botão para consultar registros
-    .AddButton('Consultar')
+    .AddButton('Consultar', OnClickConsultContas)
     .SetMargins(10, 27, 0, 0)
     .SetWidth(100)
     .AddIcon(FindBitmapByName('pesquisar'));
 
+  LoadContas(AFlexBuilder);
+end;
+
+class procedure TFlexView.BuildList(AOwner: TComponent;
+  AVertTarget: TVertScrollBox; AFDQuery: TFDQuery);
+var
+  fxBuilder: TUIFlexBuilder;
+  Layout : TFlowLayout;
+begin
+
+  TFlexUtils.ClearComponents(AVertTarget);
+
+  fxBuilder := TUIFlexBuilder.Create(AOwner, AVertTarget);
+  fxBuilder.AddTitle('Lista de movimentos');
+
+  AVertTarget.BeginUpdate;
+
+  Layout := CreateLayout(AVertTarget, 40);
+  fxBuilder.InParent(Layout);
+
+  fxBuilder.SetButtonColor(TAlphaColors.White).SetButtonTextColor(TAlphaColors.Darkgray);
+
+  fxBuilder.AddTextBox('Descrição',0,WIDTH_DESCRICAO);
+  fxBuilder.AddTextBox('Status',0, WIDTH_STATUS );
+  fxBuilder.AddTextBox('Vencimento',0, WIDTH_VENCIMENTO);
+  fxBuilder.AddTextBox('Valor',0, WIDTH_VALOR);
+  fxBuilder.AddTextBox('Data de Pagamento',0,WIDTH_DATA_PAGAMENTO);
+  fxBuilder.AddTextBox('Valor Pago',0,WIDTH_VALOR_PAGO);
+
+  fxBuilder
+    .SetButtonColor(TAlphaColors.Ghostwhite)
+    .SetButtonTextColor(TAlphaColors.Darkslategray);
+
+  AFDQuery.First;
+  while not AFDQuery.Eof do begin
+
+  fxBuilder
+    .SetButtonColor(TAlphaColors.Ghostwhite)
+    .SetButtonTextColor(TAlphaColors.Darkslategray);
+
+    Layout := CreateLayout(AVertTarget, 40);
+    fxBuilder.InParent(Layout);
+
+    fxBuilder.AddTextBox(AFDQuery.Fields[IDX_DESCRICAO].AsString,0,WIDTH_DESCRICAO);
+    fxBuilder.AddTextBox(AFDQuery.Fields[IDX_STATUS].AsString,0, WIDTH_STATUS );
+    fxBuilder.AddTextBox(AFDQuery.Fields[IDX_VENCIMENTO].AsString,0, WIDTH_VENCIMENTO);
+    fxBuilder.AddTextBox(AFDQuery.Fields[IDX_VALOR_FORMATADO].AsString,0, WIDTH_VALOR);
+    fxBuilder.AddTextBox(AFDQuery.Fields[IDX_PAGAMENTO].AsString,0,WIDTH_DATA_PAGAMENTO);
+
+    if AFDQuery.Fields[IDX_PAGAMENTO].AsString <> '' then
+       fxBuilder.AddTextBox(AFDQuery.Fields[IDX_VALOR_PAGO].AsString,0,WIDTH_VALOR_PAGO)
+    else
+       fxBuilder.AddTextBox('',0,WIDTH_VALOR_PAGO);
+
+    fxBuilder.SetFieldSize(fsSmall);
+
+    fxBuilder
+     .SetButtonColor(TAlphaColors.Darkcyan, TAlphaColors.Cadetblue)
+     .SetButtonTextColor(TAlphaColors.Ghostwhite, TAlphaColors.Ghostwhite);
+
+    fxBuilder.AddButton('', OnClickUpdateItem)
+      .SetTag(AFDQuery.Fields[IDX_ID].AsInteger)
+      .SetWidth(40)
+      .AddIcon(FindBitmapByName('save'));
+
+    fxBuilder
+     .SetButtonColor(TAlphaColors.Darkred, TAlphaColors.Firebrick)
+     .SetButtonTextColor(TAlphaColors.Ghostwhite, TAlphaColors.Ghostwhite);
+
+    fxBuilder.AddButton('', OnClickDeleteItem)
+      .SetTag(AFDQuery.Fields[IDX_ID].AsInteger)
+      .SetWidth(40)
+      .AddIcon(FindBitmapByName('delete'));
+
+
+    AFDQuery.Next;
+  end;
+
+  AVertTarget.EndUpdate;
+  fxBuilder.free;
 end;
 
 class procedure TFlexView.BuildMenu(AOwner: TComponent;
@@ -65,32 +188,33 @@ var
 begin
   fxMenu := TUIFlexBuilder.Create(AOwner, ATarget);
 
-  fxMenu
-    .SetButtonColor(TAlphaColors.Ghostwhite, TAlphaColors.Darkgrey)
+  TFlexTheme.ApplyMenuStyle(fxMenu);
+
+  fxMenu.SetButtonColor(TAlphaColors.Ghostwhite, TAlphaColors.Darkgrey)
     .SetButtonTextColor(TAlphaColors.Darkgrey, TAlphaColors.Ghostwhite)
 
     .AddTitle('Demo UIFlexBuilder')
     .SetFieldSize(fsSmall)
 
     .AddTitle('Lançar')
-      .AddButton('Despesa', OnClickCadastrarConta)
+      .AddButton('Despesa', OnClickRegisterConta)
         .SetTag(LANCAR_CONTA)
         .AddIcon(FindBitmapByName('Item 0'))
-      .AddButton('Receita', OnClickCadastrarConta)
+      .AddButton('Receita', OnClickRegisterConta)
         .SetTag(LANCAR_CONTA)
         .AddIcon(FindBitmapByName('Item 1'))
 
     .AddTitle('Categorias')
-       .AddButton('Despesa',OnClickCadastrarCategoria)
+       .AddButton('Despesa',OnClickRegisterCategoria)
           .AddIcon(FindBitmapByName('Item 3'))
-       .AddButton('Receita',OnClickCadastrarCategoria)
+       .AddButton('Receita',OnClickRegisterCategoria)
           .AddIcon(FindBitmapByName('Item 6'))
 
     .AddTitle('Subcategorias')
-      .AddButton('Despesa', OnClickCadastrarConta)
+      .AddButton('Despesa', OnClickRegisterConta)
           .SetTag(LANCAR_SUBCATEGORIA)
           .AddIcon(FindBitmapByName('Item 7'))
-      .AddButton('Receita',OnClickCadastrarConta)
+      .AddButton('Receita',OnClickRegisterConta)
           .SetTag(LANCAR_SUBCATEGORIA)
           .AddIcon(FindBitmapByName('Item 8'));
 
@@ -98,7 +222,7 @@ begin
 end;
 
 
-class procedure TFlexView.CadastrarContas(const AID, ACategoria: String;const ATabContas, ATabSubcategorias: TFDQuery);
+class procedure TFlexView.RegisterContas(const AID, ACategoria: String; const ATabContas, ATabSubcategorias: TFDQuery);
 var
   FlexForm: TUIFlexForm;
 begin
@@ -108,7 +232,6 @@ begin
   ATabSubcategorias.Filtered := False;
   ATabSubcategorias.Filter := 'ID_Categoria =' + QuotedStr(AID);
   ATabSubcategorias.Filtered := True;
-
 
   FlexForm := TUIFlexForm.Create('Lançar novo conta',700 );
   try
@@ -131,7 +254,6 @@ begin
       .AddEditField('Valor', 'Valor', '0,00', 160, fmtDecimal )
       .AddEditField('ValorPago', 'Valor Pago', '0,00', 160, fmtDecimal);
 
-
     FlexForm.AddButtonSaveAndCancel;
 
     FlexForm.FlexBuilder.DataSet := ATabContas;
@@ -144,34 +266,23 @@ begin
 
 end;
 
-class procedure TFlexView.CadastrarItem(const AID, AValue: String; AFDQuery: TFDQuery; ATipo :TTipoCadastro = tcCategoria);
+class procedure TFlexView.RegisterItem(const AID, AValue: String; AFDQuery: TFDQuery; ATipo :TTipoCadastro = tcCategoria);
 var
   FlexForm: TUIFlexForm;
-  Titulo: String;
-  Largura: Single;
+  FormularioConfig: TFormularioConfig;
 begin
 
   case ATipo of
-
-    tcCategoria:
-    begin
-       Titulo := 'Cadastro de categorias' ;
-       Largura := 315;
-    end;
-
-    tcSubCategoria:
-    begin
-       Titulo := 'Cadastrar subcategoria' ;
-       Largura := 400;
-    end;
+     tcCategoria: FormularioConfig := TFormularioConfig.Create('Cadastro de categorias', 315);
+     tcSubCategoria:  FormularioConfig := TFormularioConfig.Create('Cadastrar subcategoria',400);
   end;
 
-  FlexForm := TUIFlexForm.Create(Titulo);
+  FlexForm := TUIFlexForm.Create(FormularioConfig.Titulo);
 
   try
     FlexForm.FlexBuilder.AddNewLine(5)
       .AddEditField('id', 'Código', 50)
-      .AddEditField('descricao', 'Descrição', Largura);
+      .AddEditField('descricao', 'Descrição', FormularioConfig.Largura);
 
     if ATipo = tcCategoria then
        FlexForm.FlexBuilder.AddEditField('TipoMovimento', 'Tipo', 80)
@@ -196,17 +307,91 @@ begin
 
 end;
 
+class procedure TFlexView.LoadContas(AFlexBuilder: TUIFlexBuilder);
+var
+  Result : TValidationResult;
+  sSQL: TStringBuilder;
+begin
+  Result := AFlexBuilder
+               .SetErrorColor(TAlphaColors.Lightblue)
+               //.NotEmpty('VencimentoInicial')
+               .IsDate('VencimentoInicial')
+               //.NotEmpty('VencimentoFinal')
+               .IsDate('VencimentoFinal')
+               .Validate;
+
+  if not Result.IsValid then begin
+     TUIFlexMessageBox.ShowMessage('Aviso', String.Join(sLineBreak, Result.Errors), ['OK']);
+     abort;
+  end;
+
+  sSQL := TStringBuilder.Create;
+
+  if AFlexBuilder.Edit('VencimentoInicial').AsDateText <> '' then
+     sSQL.Append(' AND DataVencimento >= ' + QuotedStr(AFlexBuilder.Edit('VencimentoInicial').AsDateText));
+
+  if AFlexBuilder.Edit('VencimentoFinal').AsDateText <> '' then
+     sSQL.Append(' AND DataVencimento <= ' + QuotedStr(AFlexBuilder.Edit('VencimentoFinal').AsDateText));
+
+  sSQL.Append(' GROUP BY P.ID');
+
+  tabParcelas.Open(TDatabaseScripts.GetParcelas(sSQL.ToString));
+
+  sSQL.Free;
+
+  BuildList(frmMain, frmMain.vsbUIList, tabParcelas);
+
+end;
+
+class function TFlexView.CreateLayout(AControl: TControl;
+  AHeight: Single): TFlowLayout;
+begin
+  Result := TFlowLayout.Create(AControl);
+  AControl.AddObject(Result);
+  Result.Height := AHeight;
+  Result.Align := TAlignLayout.Top;
+  Result.Position.Y := 10000;
+end;
+
 class function TFlexView.FindBitmapByName(const AName: string): TBitmap;
 begin
    Result := frmMain.FindBitmapByName(AName)
 end;
 
-class procedure TFlexView.OnClickCadastrarCategoria(Sender: TObject);
+class procedure TFlexView.DeleteItemFromList(const AID: string);
 begin
-   CadastrarItem(TButton(Sender).TagString.Chars[0],TButton(Sender).TagString, tabCategorias);
+  if TUIFlexMessageBox.ShowMessage('Confirmar', 'Deseja excluir o item selecionado?', ['Sim', 'Não']) = mrYes then begin
+    try
+      SQLiteConnection.ExecSQL(TDatabaseScripts.DeleteParcelas(AID));
+
+      TFlexView.LoadContas(frmMain.FlexHeader);
+    except
+      on E: Exception do
+        TUIFlexMessageBox.ShowMessage('Erro', 'Ocorreu um erro ao excluir o item: ' + E.Message, ['OK']);
+    end;
+  end;
 end;
 
-class procedure TFlexView.OnClickCadastrarConta(Sender: TObject);
+class procedure TFlexView.UpdateItemInList(const AID: string);
+begin
+   if TUIFlexMessageBox.ShowMessage('Confirmar', 'Alterar o item selecionado?', ['Sim', 'Não']) = mrYes then begin
+    try
+      SQLiteConnection.ExecSQL(TDatabaseScripts.UpdateParcelas(AID));
+
+      TFlexView.LoadContas(frmMain.FlexHeader);
+    except
+      on E: Exception do
+        TUIFlexMessageBox.ShowMessage('Erro', 'Ocorreu um erro ao alterar o item: ' + E.Message, ['OK']);
+    end;
+  end;
+end;
+
+class procedure TFlexView.OnClickRegisterCategoria(Sender: TObject);
+begin
+   RegisterItem(TButton(Sender).TagString.Chars[0],TButton(Sender).TagString, tabCategorias);
+end;
+
+class procedure TFlexView.OnClickRegisterConta(Sender: TObject);
 var ID, Descricao, Retorno : String;
 begin
    tabCategorias.Filtered := False;
@@ -214,16 +399,31 @@ begin
    tabCategorias.Filtered := True;
 
    Retorno := TUIFlexForm.ShowForm('Lista de categorias', tabCategorias);
-   if ValidarRetornoFlexForm(Retorno, ID, Descricao) then begin
-
-       case TButton(Sender).Tag of
-          LANCAR_CONTA : CadastrarContas(ID, Descricao, tabContas, tabSubCategorias);
-          LANCAR_SUBCATEGORIA: CadastrarItem(ID, Descricao, tabSubCategorias, tcSubCategoria);
-       end;
+   if ValidateFlexFormReturn(Retorno, ID, Descricao) then
+   begin
+      case TButton(Sender).Tag of
+         LANCAR_CONTA : RegisterContas(ID, Descricao, tabContas, tabSubCategorias);
+         LANCAR_SUBCATEGORIA: RegisterItem(ID, Descricao, tabSubCategorias, tcSubCategoria);
+      end;
    end;
 end;
 
-class function TFlexView.ValidarRetornoFlexForm(const AInput: String; out AID, AValue: String): Boolean;
+class procedure TFlexView.OnClickConsultContas(Sender: TObject);
+begin
+   LoadContas(frmMain.FlexHeader);
+end;
+
+class procedure TFlexView.OnClickDeleteItem(Sender: TObject);
+begin
+   DeleteItemFromList(TButton(Sender).Tag.ToString )
+end;
+
+class procedure TFlexView.OnClickUpdateItem(Sender: TObject);
+begin
+   UpdateItemInList(TButton(Sender).Tag.ToString)
+end;
+
+class function TFlexView.ValidateFlexFormReturn(const AInput: String; out AID, AValue: String): Boolean;
 var
   Parts: TArray<String>;
 begin
@@ -241,6 +441,53 @@ begin
       Result := True;
     end;
   end;
+end;
+
+{ TFormularioConfig }
+
+class function TFormularioConfig.Create(const ATitulo: String;
+  ALargura: Single): TFormularioConfig;
+begin
+  Result.Titulo := ATitulo;
+  Result.Largura := ALargura;
+end;
+
+{ TFlexTheme }
+class procedure TFlexTheme.ApplyHeaderStyle(ABuilder: TUIFlexBuilder);
+begin
+  ABuilder
+    .SetFieldSize(fsSmall)
+    .SetButtonColor(TAlphaColors.Darkcyan, TAlphaColors.Cadetblue)
+    .SetButtonTextColor(TAlphaColors.Ghostwhite, TAlphaColors.Ghostwhite);
+end;
+
+class procedure TFlexTheme.ApplyButtonPrimary(ABuilder: TUIFlexBuilder);
+begin
+  ABuilder
+    .SetButtonColor(TAlphaColors.Darkcyan, TAlphaColors.Cadetblue)
+    .SetButtonTextColor(TAlphaColors.White, TAlphaColors.White);
+end;
+
+class procedure TFlexTheme.ApplyButtonDanger(ABuilder: TUIFlexBuilder);
+begin
+  ABuilder
+    .SetButtonColor(TAlphaColors.Darkred, TAlphaColors.Firebrick)
+    .SetButtonTextColor(TAlphaColors.White, TAlphaColors.White);
+end;
+
+class procedure TFlexTheme.ApplyListRowStyle(ABuilder: TUIFlexBuilder);
+begin
+  ABuilder
+    .SetButtonColor(TAlphaColors.Ghostwhite)
+    .SetButtonTextColor(TAlphaColors.Darkslategray);
+end;
+
+class procedure TFlexTheme.ApplyMenuStyle(ABuilder: TUIFlexBuilder);
+begin
+  ABuilder
+    .SetFieldSize(fsSmall)
+    .SetButtonColor(TAlphaColors.Ghostwhite, TAlphaColors.Darkgrey)
+    .SetButtonTextColor(TAlphaColors.Darkgrey, TAlphaColors.Ghostwhite);
 end;
 
 end.
