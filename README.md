@@ -58,7 +58,7 @@ O pacote completo inclui:
 
 ## ⚙️ Requisitos
 
-- Delphi FMX (Delphi 11 Alexandria ou superior recomendado)
+- Delphi FMX
 - FireDAC com SQLite ativado
 - Sem necessidade de componentes externos
 
