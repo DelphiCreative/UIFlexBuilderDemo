@@ -17,7 +17,10 @@ uses
   FMX.UIFlexBuilder.Types in 'UIFlex.Units\FMX.UIFlexBuilder.Types.pas',
   FMX.UIFlexBuilder.Utils in 'UIFlex.Units\FMX.UIFlexBuilder.Utils.pas',
   DC.Utils in 'DC.Units\DC.Utils.pas',
-  UIFlexView in 'UIFlexView.pas';
+  UIFlexView in 'UI\UIFlexView.pas',
+  UIFlexTheme in 'UI\UIFlexTheme.pas',
+  UIFlexLayouts in 'UI\UIFlexLayouts.pas',
+  UIFlexTypes in 'UI\UIFlexTypes.pas';
 
 {$R *.res}
 

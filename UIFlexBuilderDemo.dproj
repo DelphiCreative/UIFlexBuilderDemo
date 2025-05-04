@@ -235,7 +235,10 @@
         <DCCReference Include="UIFlex.Units\FMX.UIFlexBuilder.Types.pas"/>
         <DCCReference Include="UIFlex.Units\FMX.UIFlexBuilder.Utils.pas"/>
         <DCCReference Include="DC.Units\DC.Utils.pas"/>
-        <DCCReference Include="UIFlexView.pas"/>
+        <DCCReference Include="UI\UIFlexView.pas"/>
+        <DCCReference Include="UI\UIFlexTheme.pas"/>
+        <DCCReference Include="UI\UIFlexLayouts.pas"/>
+        <DCCReference Include="UI\UIFlexTypes.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

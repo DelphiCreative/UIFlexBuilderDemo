@@ -10,7 +10,7 @@ const
   IDX_ID_CONTA = 1;
   IDX_VALOR_PARCELA = 2;
   IDX_PAGAMENTO = 3;
-  IDX_VALOR_PAGO = 4;
+  IDX_VALOR_PAGO_FORMATADO = 4;
   IDX_NPARCELA = 5;
   IDX_NPARCELAS = 6;
   IDX_DESCRICAO_PARCELA = 7;
@@ -22,6 +22,7 @@ const
   IDX_TIPO_MOVIMENTO = 13;
   IDX_STATUS = 14;
   IDX_PORCENTAGEM_PAGA = 15;
+  IDX_VALOR_PAGO = 16;
 
 type
   TDatabaseScripts = class
@@ -207,11 +208,12 @@ begin
             '  IIF(COALESCE(P.Descricao,"")="", IIF(COALESCE(S.Descricao,"") = "", C.Descricao, S.Descricao), P.Descricao) Descricao,' +
             '  strftime("%d/%m/%Y", DataVencimento) Vencimento,' +
             '  Replace(printf("R$ %.2f",SUM(Valor)),".",",") AS Valor,' +
-            '  C.TipoMovimento,' +
+            '  IIF(C.TipoMovimento = "R", "Receitas", "Despesas") As TipoMovimento,   ' +
             '  IIF(DataPagamento IS NOT NULL, "LIQUIDADA", ' +
             '      IIF(strftime("%Y/%m/%d", DataVencimento) < strftime("%Y/%m/%d", Datetime()), "ATRASADA", "ABERTA")) Status,' +
             '  ROUND(((SELECT SUM(ValorPago) FROM Parcelas P2 WHERE P2.ID_Conta = P.ID_Conta) * 100 / ' +
-            '         (SELECT SUM(Valor) FROM Parcelas P2 WHERE P2.ID_Conta = P.ID_Conta)), 2) PorcentagemPaga ' +
+            '         (SELECT SUM(Valor) FROM Parcelas P2 WHERE P2.ID_Conta = P.ID_Conta)), 2) PorcentagemPaga, ' +
+            '  SUM(ValorPago) ValorTotal ' +
             'FROM ' +
             '  Parcelas P ' +
             '  INNER JOIN Categorias C ON C.ID = P.ID_Categoria ' +
