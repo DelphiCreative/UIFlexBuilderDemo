@@ -2,7 +2,7 @@ object frmMain: TfrmMain
   Left = 0
   Top = 0
   Caption = 'Controle de despesas e receitas - UIFlexBuilder(Demo) '
-  ClientHeight = 593
+  ClientHeight = 757
   ClientWidth = 1184
   Fill.Kind = Solid
   Position = ScreenCenter
@@ -5570,7 +5570,7 @@ object frmMain: TfrmMain
     Position.X = 20.000000000000000000
     Position.Y = 20.000000000000000000
     Size.Width = 253.000000000000000000
-    Size.Height = 553.000000000000000000
+    Size.Height = 717.000000000000000000
     Size.PlatformDefault = False
     Stroke.Thickness = 0.000000000000000000
     XRadius = 20.000000000000000000
@@ -5585,11 +5585,11 @@ object frmMain: TfrmMain
     object vsbUIMenu: TVertScrollBox
       Align = Client
       Size.Width = 233.000000000000000000
-      Size.Height = 533.000000000000000000
+      Size.Height = 697.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
       Viewport.Width = 233.000000000000000000
-      Viewport.Height = 533.000000000000000000
+      Viewport.Height = 697.000000000000000000
     end
   end
   object Rectangle1: TRectangle
@@ -5604,7 +5604,7 @@ object frmMain: TfrmMain
     Margins.Right = 20.000000000000000000
     Margins.Bottom = 20.000000000000000000
     Size.Width = 871.000000000000000000
-    Size.Height = 553.000000000000000000
+    Size.Height = 717.000000000000000000
     Size.PlatformDefault = False
     Stroke.Thickness = 0.000000000000000000
     XRadius = 20.000000000000000000
@@ -5620,11 +5620,12 @@ object frmMain: TfrmMain
       Align = Client
       Margins.Top = 20.000000000000000000
       Size.Width = 851.000000000000000000
-      Size.Height = 426.000000000000000000
+      Size.Height = 590.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
+      ShowScrollBars = False
       Viewport.Width = 851.000000000000000000
-      Viewport.Height = 426.000000000000000000
+      Viewport.Height = 590.000000000000000000
     end
     object flwHeader: TFlowLayout
       Align = Top

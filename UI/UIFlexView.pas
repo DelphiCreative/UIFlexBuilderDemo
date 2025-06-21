@@ -60,7 +60,7 @@ implementation
 uses  FMX.UIFlexBuilder.Types, Frm.Main,
   FMX.UIFlexBuilder.Forms, DM.Main, FMX.UIFlexBuilder.Dialogs,
   DC.DatabaseScripts, FMX.UIFlexBuilder.Utils, DC.Firedac.VersionControl,
-  UIFlexTheme, FMX.UIFlexBuilder.Classes;
+  UIFlexTheme, FMX.UIFlexBuilder.Classes, UIFlexLayouts;
 
 class procedure TFlexView.BuildHeader(AFlexBuilder: TUIFlexBuilder);
 begin
@@ -75,10 +75,10 @@ begin
     .AddEditField('VencimentoFinal', 'Vencimento Final', 'dd/mm/aaaa', 160, fmtDate)
       .SetText(FormatDateTime('dd/mm/yyyy', EndOfTheMonth(Date)));
 
-  AFlexBuilder.SetFieldSize(fsSmall)
-     .SetButtonColor(TAlphaColors.Darkcyan, TAlphaColors.Cadetblue)
-     .SetButtonTextColor(TAlphaColors.Ghostwhite, TAlphaColors.Ghostwhite)
+  TFlexTheme.ApplyHeaderStyle(AFlexBuilder);
+
     // Botão para consultar registros
+  AFlexBuilder
     .AddButton('Consultar', OnClickConsultContas)
     .SetMargins(10, 27, 0, 0)
     .SetWidth(100)
@@ -100,49 +100,45 @@ begin
 
   TFlexUtils.ClearComponents(AVertTarget);
 
+  if AFDQuery.RecordCount = 0 then
+    Exit;
+
   AVertTarget.BeginUpdate;
 
   fxBuilder := TUIFlexBuilder.Create(AOwner, AVertTarget);
+
+
   fxBuilder.AddTitle('Lista de movimentos');
 
   AFDQuery.First;
   while not AFDQuery.Eof do begin
 
     if sGroupBy <> AFDQuery.Fields[IDX_TIPO_MOVIMENTO].AsString  then begin
+
+       if not sGroupBy.IsEmpty then begin
+
+         Layout := CreateLayout(AVertTarget, 40);
+         fxBuilder.InParent(Layout);
+
+         TFlexTheme.ApplyListTitleStyle(fxBuilder);
+
+         fxBuilder.AddTextBox('Quantidade: ' + FormatFloat('#,##0', Totais.Quantidade), 0, 5 + WIDTH_DESCRICAO + WIDTH_STATUS );
+         fxBuilder.AddTextBox('Total: R$ ' + FormatFloat('#,##0.00', Totais.ValorTotal), 0, WIDTH_VALOR + WIDTH_DATA_PAGAMENTO + 5);
+         fxBuilder.AddTextBox(txt, 'Pago: R$ ' + FormatFloat('#,##0.00', Totais.ValorPago), 0, WIDTH_VALOR_PAGO + WIDTH_DATA_PAGAMENTO);
+         txt.HorzTextAlign := TTextAlign.Trailing;
+
+         Totais.Clear;
+       end;
+
        sGroupBy := AFDQuery.Fields[IDX_TIPO_MOVIMENTO].AsString;
-
-       Layout := CreateLayout(AVertTarget, 40);
-       fxBuilder.InParent(Layout);
-       fxBuilder.AddTitle('Lista de movimentos: '+ sGroupBy, 12);
-
-       Layout := CreateLayout(AVertTarget, 40);
-       fxBuilder.InParent(Layout);
-       fxBuilder.SetButtonColor(TAlphaColors.White).SetButtonTextColor(TAlphaColors.Darkgray);
-
-       fxBuilder.AddTextBox('Descrição',0,WIDTH_DESCRICAO);
-       fxBuilder.AddTextBox('Status',0, WIDTH_STATUS );
-       fxBuilder.AddTextBox('Vencimento',0, WIDTH_VENCIMENTO);
-       fxBuilder.AddTextBox('Valor',0, WIDTH_VALOR);
-       fxBuilder.AddTextBox('Data de Pagamento',0,WIDTH_DATA_PAGAMENTO);
-       fxBuilder.AddTextBox('Valor Pago',0,WIDTH_VALOR_PAGO);
+       TFlexLayouts.AddMovementTitle(fxBuilder,AVertTarget,'Lista de movimentos: '+ sGroupBy);
+       TFlexLayouts.AddMovementColumns(fxBuilder,AVertTarget);
     end;
 
-    fxBuilder.SetButtonColor(TAlphaColors.Ghostwhite);
-    fxBuilder.SetButtonTextColor(TAlphaColors.Darkslategray);
 
-    Layout := CreateLayout(AVertTarget, 40);
-    fxBuilder.InParent(Layout);
+    TFlexLayouts.AddMovementData(fxBuilder,AVertTarget, AFDQuery);
 
-    fxBuilder.AddTextBox(AFDQuery.Fields[IDX_DESCRICAO].AsString,0,WIDTH_DESCRICAO);
-    fxBuilder.AddTextBox(AFDQuery.Fields[IDX_STATUS].AsString,0, WIDTH_STATUS );
-    fxBuilder.AddTextBox(AFDQuery.Fields[IDX_VENCIMENTO].AsString,0, WIDTH_VENCIMENTO);
-    fxBuilder.AddTextBox(AFDQuery.Fields[IDX_VALOR_FORMATADO].AsString,0, WIDTH_VALOR);
-    fxBuilder.AddTextBox(AFDQuery.Fields[IDX_PAGAMENTO].AsString,0,WIDTH_DATA_PAGAMENTO,0);
-
-    if AFDQuery.Fields[IDX_PAGAMENTO].AsString <> '' then
-       fxBuilder.AddTextBox(AFDQuery.Fields[IDX_VALOR_PAGO_FORMATADO].AsString,0,WIDTH_VALOR_PAGO)
-    else
-       fxBuilder.AddTextBox('',0,WIDTH_VALOR_PAGO);
+    Totais.Add(AFDQuery.Fields[IDX_VALOR_PARCELA].AsFloat,AFDQuery.Fields[IDX_VALOR_PAGO].AsFloat);
 
     fxBuilder.SetFieldSize(fsSmall);
 
@@ -159,8 +155,6 @@ begin
      .SetButtonColor(TAlphaColors.Darkred, TAlphaColors.Firebrick)
      .SetButtonTextColor(TAlphaColors.Ghostwhite, TAlphaColors.Ghostwhite);
 
-    TFlexTheme.ApplyButtonDanger(fxBuilder);
-
     fxBuilder.AddButton('', OnClickDeleteItem)
       .SetTag(AFDQuery.Fields[IDX_ID].AsInteger)
       .SetWidth(40)
@@ -168,6 +162,17 @@ begin
 
     AFDQuery.Next;
   end;
+
+   Layout := CreateLayout(AVertTarget, 40);
+   fxBuilder.InParent(Layout);
+
+   TFlexTheme.ApplyListTitleStyle(fxBuilder);
+
+   fxBuilder.AddTextBox('Quantidade: ' + FormatFloat('#,##0', Totais.Quantidade), 0, 5 + WIDTH_DESCRICAO + WIDTH_STATUS );
+   fxBuilder.AddTextBox('Total: R$ ' + FormatFloat('#,##0.00', Totais.ValorTotal), 0, WIDTH_VALOR + WIDTH_DATA_PAGAMENTO + 5);
+   fxBuilder.AddTextBox(txt, 'Pago: R$ ' + FormatFloat('#,##0.00', Totais.ValorPago), 0, WIDTH_VALOR_PAGO + WIDTH_DATA_PAGAMENTO);
+   txt.HorzTextAlign := TTextAlign.Trailing;
+
 
   AVertTarget.EndUpdate;
   fxBuilder.free;
@@ -180,8 +185,7 @@ var
 begin
   fxMenu := TUIFlexBuilder.Create(AOwner, ATarget);
 
-  fxMenu.SetButtonColor(TAlphaColors.Ghostwhite, TAlphaColors.Darkgrey)
-    .SetButtonTextColor(TAlphaColors.Darkgrey, TAlphaColors.Ghostwhite);
+  TFlexTheme.ApplyMenuStyle(fxMenu);
 
   fxMenu
     .AddTitle('Demo UIFlexBuilder')
@@ -244,13 +248,15 @@ begin
       .AddEditField('Valor', 'Valor', '0,00', 160, fmtDecimal )
       .AddEditField('ValorPago', 'Valor Pago', '0,00', 160, fmtDecimal);
 
-    FlexForm.AddButtonSaveAndCancel;
+    FlexForm.AddButtonSaveAndExit;
 
     FlexForm.FlexBuilder.DataSet := ATabContas;
     FlexForm.FlexBuilder.KeyField := 'id';
 
     FlexForm.Show;
   finally
+
+    LoadContas(frmMain.FlexHeader);
     FlexForm.Free;
   end;
 

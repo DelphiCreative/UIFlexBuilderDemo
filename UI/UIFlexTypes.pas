@@ -2,6 +2,15 @@ unit UIFlexTypes;
 
 interface
 
+const
+  WIDTH_DESCRICAO = 200;
+  WIDTH_STATUS = 70;
+  WIDTH_VENCIMENTO = 80;
+  WIDTH_VALOR = 80;
+  WIDTH_DATA_PAGAMENTO = 80;
+  WIDTH_VALOR_PAGO = 80;
+
+
 type
   TTipoCadastro = (tcCategoria, tcSubCategoria);
 

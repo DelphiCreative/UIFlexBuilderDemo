@@ -75,7 +75,7 @@ begin
    Result := 'UPDATE Parcelas '+
              '  SET '+
              '   DataPagamento = IIF(DataPagamento IS NULL, strftime("%Y-%m-%d",DateTime()),NULL), '+
-             '   ValorPago = IIF(DataPagamento IS NULL, Valor, NULL) '+
+             '   ValorPago = IIF(DataPagamento IS NULL, Valor, 0) '+
              '  WHERE ID IN ('+QuotedStr(AID)+')';
 
 end;

@@ -50,7 +50,9 @@ end;
 
 class procedure TFlexTheme.ApplyListTitleStyle(ABuilder: TUIFlexBuilder);
 begin
-  ABuilder.SetButtonColor(TAlphaColors.White).SetButtonTextColor(TAlphaColors.Darkgray);
+  ABuilder
+    .SetButtonColor(TAlphaColors.White)
+    .SetButtonTextColor(TAlphaColors.Darkgray);
 end;
 
 class procedure TFlexTheme.ApplyMenuStyle(ABuilder: TUIFlexBuilder);

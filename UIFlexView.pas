@@ -14,6 +14,7 @@ uses
   FMX.UIFlexBuilder,
   System.Classes,
   System.DateUtils,
+  System.JSON,
   System.StrUtils,
   System.SysUtils,
   System.UITypes;
@@ -52,7 +53,7 @@ type
 type
   TFlexView = class
   public
-     class function CreateLayout(AControl: TControl; AHeight: Single): TFlowLayout;
+     class function CreateLayout(AControl: TControl; AHeight: Single;APaddingLeft: Single = 0): TFlowLayout;
      class function FindBitmapByName(const AName: string): TBitmap;
      class function ValidateFlexFormReturn(const AInput: String; out AID, AValue: String): Boolean;
      class procedure BuildList(AOwner: TComponent; AVertTarget: TVertScrollBox; AFDQuery: TFDQuery);
@@ -80,6 +81,7 @@ uses  FMX.UIFlexBuilder.Types, Frm.Main,
 
 class procedure TFlexView.BuildHeader(AFlexBuilder: TUIFlexBuilder);
 begin
+
   AFlexBuilder.AddTitle('Lista de contas no período')
 
     // Campo para data de vencimento inicial
@@ -100,6 +102,7 @@ begin
     .AddIcon(FindBitmapByName('pesquisar'));
 
   LoadContas(AFlexBuilder);
+
 end;
 
 class procedure TFlexView.BuildList(AOwner: TComponent;
@@ -107,14 +110,15 @@ class procedure TFlexView.BuildList(AOwner: TComponent;
 var
   fxBuilder: TUIFlexBuilder;
   Layout : TFlowLayout;
+  sOrderBy :string;
 begin
 
   TFlexUtils.ClearComponents(AVertTarget);
 
+  AVertTarget.BeginUpdate;
+
   fxBuilder := TUIFlexBuilder.Create(AOwner, AVertTarget);
   fxBuilder.AddTitle('Lista de movimentos');
-
-  AVertTarget.BeginUpdate;
 
   Layout := CreateLayout(AVertTarget, 40);
   fxBuilder.InParent(Layout);
@@ -128,16 +132,11 @@ begin
   fxBuilder.AddTextBox('Data de Pagamento',0,WIDTH_DATA_PAGAMENTO);
   fxBuilder.AddTextBox('Valor Pago',0,WIDTH_VALOR_PAGO);
 
-  fxBuilder
-    .SetButtonColor(TAlphaColors.Ghostwhite)
-    .SetButtonTextColor(TAlphaColors.Darkslategray);
-
   AFDQuery.First;
   while not AFDQuery.Eof do begin
 
-  fxBuilder
-    .SetButtonColor(TAlphaColors.Ghostwhite)
-    .SetButtonTextColor(TAlphaColors.Darkslategray);
+    fxBuilder.SetButtonColor(TAlphaColors.Ghostwhite);
+    fxBuilder.SetButtonTextColor(TAlphaColors.Darkslategray);
 
     Layout := CreateLayout(AVertTarget, 40);
     fxBuilder.InParent(Layout);
@@ -155,18 +154,23 @@ begin
 
     fxBuilder.SetFieldSize(fsSmall);
 
-    fxBuilder
-     .SetButtonColor(TAlphaColors.Darkcyan, TAlphaColors.Cadetblue)
-     .SetButtonTextColor(TAlphaColors.Ghostwhite, TAlphaColors.Ghostwhite);
+    TFlexTheme.ApplyButtonPrimary(fxBuilder);
+
+//    fxBuilder
+//     .SetButtonColor(TAlphaColors.Darkcyan, TAlphaColors.Cadetblue)
+//     .SetButtonTextColor(TAlphaColors.Ghostwhite, TAlphaColors.Ghostwhite);
 
     fxBuilder.AddButton('', OnClickUpdateItem)
       .SetTag(AFDQuery.Fields[IDX_ID].AsInteger)
       .SetWidth(40)
       .AddIcon(FindBitmapByName('save'));
 
-    fxBuilder
-     .SetButtonColor(TAlphaColors.Darkred, TAlphaColors.Firebrick)
-     .SetButtonTextColor(TAlphaColors.Ghostwhite, TAlphaColors.Ghostwhite);
+
+    TFlexTheme.ApplyButtonDanger(fxBuilder);
+
+//    fxBuilder
+//     .SetButtonColor(TAlphaColors.Darkred, TAlphaColors.Firebrick)
+//     .SetButtonTextColor(TAlphaColors.Ghostwhite, TAlphaColors.Ghostwhite);
 
     fxBuilder.AddButton('', OnClickDeleteItem)
       .SetTag(AFDQuery.Fields[IDX_ID].AsInteger)
@@ -344,11 +348,13 @@ begin
 end;
 
 class function TFlexView.CreateLayout(AControl: TControl;
-  AHeight: Single): TFlowLayout;
+  AHeight: Single; APaddingLeft: Single = 0): TFlowLayout;
 begin
   Result := TFlowLayout.Create(AControl);
   AControl.AddObject(Result);
   Result.Height := AHeight;
+  Result.Width := AControl.Width;
+  Result.Padding.Left := APaddingLeft;
   Result.Align := TAlignLayout.Top;
   Result.Position.Y := 10000;
 end;
